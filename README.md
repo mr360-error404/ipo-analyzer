@@ -1,4 +1,12 @@
-# Indian Mainboard IPO Analyzer
+# Greyledger — Indian IPO analyzer
+
+**IPO calls, timestamped before listing.** Rates every live Indian IPO twice (listing day and holding) from the grey
+market, subscription, financials, broker reviews and what news and YouTube say in English and Hindi, then logs each
+call in a tamper-evident public ledger and scores it after listing.
+
+- Website: `streamlit run greyledger.py` (hosted on Streamlit Community Cloud; pages refresh twice a day)
+- Local research dashboard with the optional offline AI: `streamlit run app.py`
+
 
 Free, local tool that scores Indian mainboard IPOs twice: **for listing-day gains** and
 **for long-term holding**, each as Good / Moderate / Risky / Avoid with the reasons behind it.
@@ -133,6 +141,8 @@ ipo/pipeline.py   analyze() / rescore()
 ipo/backtest.py   past-IPO collection, scoring, accuracy report, weight tuning
 ipo/model.py      prediction models + walk-forward test
 ipo/ai.py         optional local-AI summary (Ollama / LM Studio / any OpenAI-style server)
+greyledger.py     the public website (pages from data/site_snapshot.json + live lookup)
+web/render.py     HTML for every page; web/snapshot.py builds the daily snapshot; web/style.css
 ipo/ledger.py     live prediction ledger: hash-chained log, auto-scoring, finfluencer scorecard
 ipo/notes.py      research notes per IPO (data/notes/<slug>.md, shown in the 📝 Notes box)
 data/             backtest data, trained model, saved X/Instagram posts (social/)

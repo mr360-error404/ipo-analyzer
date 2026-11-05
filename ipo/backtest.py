@@ -288,11 +288,39 @@ def print_summary(s):
               ", ".join(f"{c} {v:+.2f}" for c, v in o["components"].items() if v is not None))
 
 
+PUBLIC = os.path.join(os.path.dirname(DATA), "backtest_public.json")
+
+
+def export_public(path=PUBLIC):
+    """Results of the backtest without the scraped inputs: summary tables, held-out scores, the model's
+    walk-forward test and, per past IPO, our verdicts next to what happened. Published with the site."""
+    from . import model
+    scored = score_all(_load())
+    saved = model.load()
+    raw = {k: v["row"] for k, v in _load().items()}
+    rows = [dict(name=r["name"], slug=r["slug"], listed=r["listed"], ig_id=raw[r["slug"]].get("ig_id"),
+                 price=raw[r["slug"]].get("price"), size_cr=raw[r["slug"]].get("size_cr"),
+                 subscription=raw[r["slug"]].get("subscription"), gmp=raw[r["slug"]].get("gmp"),
+                 gmp_pct=None if r["gmp_pct"] is None else round(r["gmp_pct"], 2),
+                 listing_label=r["listing_label"], listing_score=r["listing_score"],
+                 listing_gain=r["listing_gain"], long_label=r["long_label"], long_score=r["long_score"],
+                 ltp_return=r["ltp_return"], ltp_excess=None if r.get("ltp_excess") is None else round(r["ltp_excess"], 2))
+            for r in sorted(scored, key=lambda r: r["listed"], reverse=True)]
+    out = dict(generated=date.today().isoformat(), summary=summary(scored), holdout=holdout(scored),
+               walk_forward=saved["test"] if saved else None, rows=rows)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, default=float)
+    return out
+
+
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     cmd = sys.argv[1] if len(sys.argv) > 1 else "report"
     if cmd == "collect":
         collect()
+    elif cmd == "export":
+        out = export_public()
+        print(f"Wrote {PUBLIC}: {len(out['rows'])} past IPOs")
     else:
         data = _load()
         if not data:

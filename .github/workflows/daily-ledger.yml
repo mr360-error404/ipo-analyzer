@@ -39,11 +39,15 @@ jobs:
       - name: Check the hash chain is intact
         run: python -m ipo.ledger verify
 
-      - name: Commit the new entries
+      - name: Refresh the website snapshot (Greyledger)
+        # reuses the pages cached by the step above, so it is quick
+        run: python -m web.snapshot
+
+      - name: Commit the new entries and snapshot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/ledger.jsonl
+          git add data/ledger.jsonl data/site_snapshot.json
           if git diff --cached --quiet; then echo "Nothing new to log"; exit 0; fi
           git commit -m "Ledger: predictions logged $(TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M IST')"
-          git push
+          git pull --rebase --quiet && git push
