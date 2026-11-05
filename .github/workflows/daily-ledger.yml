@@ -1,0 +1,44 @@
+# Logs the prediction for every live IPO twice a day and commits it, so each entry carries
+# GitHub's own timestamp: public proof it was made before the IPO listed.
+name: Daily prediction log
+
+on:
+  schedule:
+    - cron: "30 2 * * *"    # 08:00 IST, before 09:00 on listing days
+    - cron: "30 12 * * *"   # 18:00 IST, after the day's GMP and subscription updates
+  workflow_dispatch:        # "Run workflow" button on the Actions tab
+
+permissions:
+  contents: write
+
+concurrency: ledger         # never two runs appending at once
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Log predictions for live IPOs
+        # --fast skips YouTube transcripts (YouTube usually blocks cloud servers); titles are still read
+        run: python -m ipo.ledger log --fast | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the hash chain is intact
+        run: python -m ipo.ledger verify
+
+      - name: Commit the new entries
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ledger.jsonl
+          if git diff --cached --quiet; then echo "Nothing new to log"; exit 0; fi
+          git commit -m "Ledger: predictions logged $(TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M IST')"
+          git push

@@ -1,0 +1,15 @@
+# Download cache
+.cache/
+__pycache__/
+*.pyc
+
+# Scraped history of past IPOs: kept private, only the trained model (data/model.pkl) is published
+data/backtest_data.json
+data/collect.log
+
+# Posts read from my own logged-in X/Instagram feed
+data/social/
+
+# Local secrets (API keys) if ever added
+.streamlit/secrets.toml
+.env
