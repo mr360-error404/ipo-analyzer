@@ -47,7 +47,7 @@ with st.sidebar:
         st.session_state.pop("results", None)
         st.rerun()
     st.caption("Sources: investorgain/chittorgarh (GMP, financials, subscription), Google News, Reddit, "
-               "YouTube, X and Instagram (free web search, plus posts Claude reads from your Chrome on request).")
+               "YouTube, X and Instagram (free web search, plus posts saved from your own logged-in Chrome).")
     st.warning("Research aid only, not investment advice. GMP is unofficial and can be manipulated. "
                "Read the RHP before investing.")
 
@@ -313,16 +313,15 @@ def show(res):
     with tabs[5]:
         social_tab(soc.get("reddit", []), sen.get("reddit", {}), "No Reddit posts found.")
     how = (f"Posts come from two places: a free web search (automatic, but it pauses when the search engine "
-           f"asks for a human check) and posts Claude reads from your logged-in Chrome when you ask, e.g. "
-           f"*\"check X and Instagram for {ipo['name']}\"*.")
+           f"asks for a human check) and posts saved from your own logged-in Chrome.")
     saved = f" Last Chrome collection: {res['social_saved_at']}." if res.get("social_saved_at") else ""
     with tabs[6]:
         st.caption(how + saved)
-        social_tab(soc.get("x", []), sen.get("x", {}), "No X posts found yet. Ask Claude to check X for this IPO.")
+        social_tab(soc.get("x", []), sen.get("x", {}), "No X posts found yet.")
     with tabs[7]:
         st.caption(how + saved)
         social_tab(soc.get("instagram", []), sen.get("instagram", {}),
-                   "No Instagram posts found yet. Ask Claude to check Instagram for this IPO.")
+                   "No Instagram posts found yet.")
     with tabs[8]:
         st.write("Paste any other posts, tweets, reel captions or comments below (one per line or paragraph) "
                  "and they'll be added to the sentiment score.")

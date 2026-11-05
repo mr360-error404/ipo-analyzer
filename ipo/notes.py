@@ -1,6 +1,6 @@
 """Research notes per IPO.
 
-* Hand-written notes: plain markdown in data/notes/<slug>.md (written by Claude on request, or from the app).
+* Hand-written notes: plain markdown in data/notes/<slug>.md (written by hand, or from the app).
 * auto(res): a summary generated for every IPO from the collected data, so no IPO is ever without one.
 """
 import os

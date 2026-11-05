@@ -196,7 +196,7 @@ def bottom():
   (grey market premium, subscription, financials, broker reviews, news and social media). They are not
   recommendations to subscribe, buy or sell, and the author is not a SEBI-registered adviser or research analyst.
   Grey market prices are unofficial. Read the offer document (RHP) and decide for yourself.</div>
-  <div>Built by Rupesh Anand, IIT Jammu, with help from an AI coding assistant.<br>
+  <div>Built by Rupesh Anand, IIT Jammu.<br>
   {link(REPO, "Source code &amp; prediction ledger", True)}</div>
 </div></footer>"""
 

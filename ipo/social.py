@@ -1,5 +1,5 @@
 """Free public chatter about an IPO: Google News, Reddit, YouTube (titles + transcripts),
-X and Instagram (public posts found by web search, plus posts Claude saved from your Chrome)."""
+X and Instagram (public posts found by web search, plus posts saved from your Chrome)."""
 import json
 import math
 import os
@@ -132,7 +132,7 @@ def instagram_posts(name, limit=20):
 
 
 def saved_posts(slug):
-    """Posts Claude collected from your logged-in Chrome: data/social/<slug>.json
+    """Posts collected from your own logged-in Chrome: data/social/<slug>.json
     {"collected": "...", "x": [{source, text, url, date}], "instagram": [...]}"""
     path = os.path.join(SAVED_DIR, f"{slug}.json")
     if not os.path.exists(path):

@@ -36,8 +36,8 @@ Terminal version: `python cli.py` lists IPOs, `python cli.py bombay-coated` anal
 | News headlines | Google News RSS |
 | Reddit posts | Reddit search RSS |
 | YouTube videos + Hindi/English auto-captions | YouTube search page + youtube-transcript-api |
-| X posts, Instagram posts/reels | Free web search (DuckDuckGo; pauses for an hour if it asks for a human check, never bypassed) **plus** posts Claude reads from your logged-in Chrome on request, saved in `data/social/<ipo-slug>.json`. Ask Claude: "check X and Instagram for <IPO name>". |
-| Anything else | Paste posts into the "Paste posts" tab; write your own in the 📝 Notes box (or ask Claude to research an IPO and add notes) |
+| X posts, Instagram posts/reels | Free web search (DuckDuckGo; pauses for an hour if it asks for a human check, never bypassed) **plus** posts saved from your own logged-in Chrome in `data/social/<ipo-slug>.json`. |
+| Anything else | Paste posts into the "Paste posts" tab; write your own in the 📝 Notes box |
 
 Pages are cached in `.cache/` (GMP 30 min, company pages 6 h, social 2 h). "Refresh all data"
 clears it.
