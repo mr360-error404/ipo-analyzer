@@ -33,6 +33,7 @@ header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecor
 [class*="st-key-"] button[kind="primary"], [class*="st-key-"] button[kind="secondary"] {
   border-radius: 2px; border: 1px solid #17150f; background: #17150f; color: #faf8f3; font-weight: 500; }
 [class*="st-key-"] button[kind="primary"]:hover, [class*="st-key-"] button[kind="secondary"]:hover { background: #47433a; color: #faf8f3; border-color: #47433a; }
+[class*="st-key-"] button p { color: inherit !important; }
 [class*="st-key-"] button:disabled { background: #e2ddd0; border-color: #e2ddd0; color: #847f72; }
 /* section switcher styled as underlined tabs */
 .st-key-switch [data-testid="stSegmentedControl"] button, .st-key-switch [data-baseweb="button-group"] button {
