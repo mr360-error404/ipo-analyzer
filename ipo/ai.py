@@ -143,14 +143,66 @@ def _parse(text):
         raise
 
 
-def _ask(fact_sheet):
-    body = dict(model=MODEL, temperature=0.2, keep_alive="2m", response_format={"type": "json_object"},
+# Online providers the hosted website offers (all speak the same OpenAI-style API). A visitor brings their own
+# free key; it is used for that one request and never stored. Only these addresses are allowed.
+PROVIDERS = {
+    "OpenRouter (free models)": ("https://openrouter.ai/api/v1", "google/gemma-4-31b-it:free"),
+    "Groq (free tier)": ("https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"),
+    "Google Gemini (free tier)": ("https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash"),
+    "NVIDIA NIM (free)": ("https://integrate.api.nvidia.com/v1", "google/gemma-4-31b-it"),
+}
+
+
+def provider_models(name):
+    """Current model names for a provider, fetched live because free-tier model names change often.
+    OpenRouter and NVIDIA list theirs publicly; Groq and Gemini need a key, so they fall back to the default."""
+    url, default = PROVIDERS[name]
+    try:
+        data = requests.get(f"{url}/models", timeout=8).json()["data"]
+        ids = [m["id"] for m in data]
+        if "openrouter" in url:
+            ids = [i for i in ids if i.endswith(":free")]
+        else:
+            ids = [i for i in ids if any(k in i.lower() for k in ("instruct", "-it", "nemotron", "chat"))
+                   and not any(k in i.lower() for k in ("vision", "embed", "guard", "reward", "code"))]
+        if ids:
+            return [default] + [i for i in sorted(ids) if i != default] if default in ids else sorted(ids)
+    except (requests.RequestException, ValueError, KeyError):
+        pass
+    return [default]
+
+
+def _problem(r):
+    """A short, human reason from a failed provider response."""
+    try:
+        body = r.json()
+        body = body[0] if isinstance(body, list) and body else body
+        e = body.get("error", body) if isinstance(body, dict) else body
+        msg = e.get("message") if isinstance(e, dict) else str(e)
+    except ValueError:
+        msg = r.text
+    return f"{r.status_code}: {(msg or r.reason or 'request failed')[:200]}"
+
+
+def _ask(fact_sheet, url=None, model=None, key=None):
+    url, model = (url or URL).rstrip("/"), model or MODEL
+    headers = {"Authorization": f"Bearer {key}"} if key else _headers()
+    body = dict(model=model, temperature=0.2, keep_alive="2m", response_format={"type": "json_object"},
                 messages=[dict(role="system", content=SYSTEM),
                           dict(role="user", content=f"FACTS\n{fact_sheet}\n\nReturn JSON in this shape:\n{SCHEMA}")])
-    if "qwen3" in MODEL.lower() and "11434" in URL:
-        body["reasoning_effort"] = "none"  # Ollama: skip Qwen3's long thinking, the summary only needs a quick read
-    r = requests.post(f"{URL}/chat/completions", json=body, headers=_headers(), timeout=TIMEOUT)
-    r.raise_for_status()
+    if "11434" in url:
+        body["reasoning_effort"] = "none" if "qwen3" in model.lower() else None  # Ollama: skip Qwen3's long thinking
+        if body["reasoning_effort"] is None:
+            del body["reasoning_effort"]
+    else:
+        body.pop("keep_alive")  # an Ollama-only field
+    r = requests.post(f"{url}/chat/completions", json=body, headers=headers, timeout=TIMEOUT)
+    if r.status_code in (401, 403):
+        raise PermissionError("the provider rejected the key")
+    if r.status_code == 429:
+        raise RuntimeError("the provider's free limit was hit, try again in a minute")
+    if not r.ok:
+        raise RuntimeError(f"{_problem(r)}. Check the key and the model name, or pick another model.")
     out = _parse(r.json()["choices"][0]["message"]["content"])
     for key in ("positives", "risks", "watch"):
         v = out.get(key)
@@ -159,11 +211,13 @@ def _ask(fact_sheet):
     return out
 
 
-def review(res, force=False):
-    """AI view for one analysed IPO. Cached for a day per identical fact sheet. Raises on server errors."""
-    sheet = facts(res)
-    key = "ai:" + hashlib.sha1(f"{MODEL}|{SYSTEM}|{SCHEMA}|{sheet}".encode()).hexdigest()  # new prompt = new answer
-    out = _ask(sheet) if force else cached(key, 86400, lambda: _ask(sheet))
+def review(res, force=False, url=None, model=None, key=None):
+    """AI view for one analysed IPO. Cached for a day per identical fact sheet. Raises on server errors.
+    url/model/key override the server settings (the hosted site passes a visitor's own provider and key)."""
+    sheet, model_name = facts(res), model or MODEL
+    ck = "ai:" + hashlib.sha1(f"{model_name}|{SYSTEM}|{SCHEMA}|{sheet}".encode()).hexdigest()  # new prompt = new answer
+    ask = lambda: _ask(sheet, url, model_name, key)
+    out = ask() if force else cached(ck, 86400, ask)
     if force:
-        cached(key, 0, lambda: out)
-    return dict(out, model=MODEL)
+        cached(ck, 0, lambda: out)
+    return dict(out, model=model_name)

@@ -5,6 +5,7 @@ market, subscription, financials, broker reviews and what news and YouTube say i
 call in a tamper-evident public ledger and scores it after listing.
 
 - **Live site: https://greyledger.streamlit.app** (Streamlit Community Cloud; pages refresh twice a day; the free host sleeps when idle, so the first load can take ~30 s)
+- **Analyzer page** on the site = the full tool: scan live and past IPOs (grouped), analyse any IPO live, browse the backtest, paste your own posts, and an optional AI summary using the visitor's own free key (OpenRouter, Groq, Gemini or NVIDIA; the key is used for one request and never stored)
 - Run it yourself: `streamlit run greyledger.py`
 - Local research dashboard with the optional offline AI: `streamlit run app.py`
 

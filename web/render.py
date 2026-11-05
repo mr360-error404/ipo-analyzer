@@ -178,8 +178,8 @@ def svg_img(w, h, alt, inner):
 def top(active="", built=None):
     """Masthead (with the stylesheet). Each chunk of a page is its own .gl block."""
     nav = "".join(f'<a href="{href}" target="_self" class="{"on" if key == active else ""}">{name}</a>'
-                  for key, href, name in (("home", "?", "Today"), ("track", "?page=track", "Track record"),
-                                          ("method", "?page=method", "Method")))
+                  for key, href, name in (("home", "?", "Today"), ("analyzer", "?page=analyzer", "Analyzer"),
+                                          ("track", "?page=track", "Track record"), ("method", "?page=method", "Method")))
     nav += f'<a href="{REPO}" target="_blank" rel="noopener">Code</a>'
     stamp = f"Updated {when(built)}" if built else ""
     return f"""<style>{FONTS}{CSS}</style>
