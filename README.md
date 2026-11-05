@@ -4,7 +4,8 @@
 market, subscription, financials, broker reviews and what news and YouTube say in English and Hindi, then logs each
 call in a tamper-evident public ledger and scores it after listing.
 
-- Website: `streamlit run greyledger.py` (hosted on Streamlit Community Cloud; pages refresh twice a day)
+- **Live site: https://greyledger.streamlit.app** (Streamlit Community Cloud; pages refresh twice a day; the free host sleeps when idle, so the first load can take ~30 s)
+- Run it yourself: `streamlit run greyledger.py`
 - Local research dashboard with the optional offline AI: `streamlit run app.py`
 
 

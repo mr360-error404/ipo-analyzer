@@ -94,6 +94,7 @@ def md(text):
     def inline(s):
         s = esc(s)
         s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+        s = re.sub(r"(?<![\w*])\*([^*\n]+?)\*(?![\w*])", r"<i>\1</i>", s)
         return re.sub(r"\[(.+?)\]\((https?://[^)\s]+)\)", r'<a href="\2" target="_blank" rel="noopener">\1</a>', s)
     for line in (text or "").splitlines():
         line = line.rstrip()
