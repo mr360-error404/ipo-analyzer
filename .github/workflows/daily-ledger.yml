@@ -7,6 +7,11 @@ on:
     - cron: "30 2 * * *"    # 08:00 IST, before 09:00 on listing days
     - cron: "30 12 * * *"   # 18:00 IST, after the day's GMP and subscription updates
   workflow_dispatch:        # "Run workflow" button on the Actions tab
+    inputs:
+      force:
+        description: "Log again even if an IPO was logged in the last 3 hours"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -18,9 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
           cache: pip
@@ -29,7 +34,7 @@ jobs:
 
       - name: Log predictions for live IPOs
         # --fast skips YouTube transcripts (YouTube usually blocks cloud servers); titles are still read
-        run: python -m ipo.ledger log --fast | tee -a "$GITHUB_STEP_SUMMARY"
+        run: python -m ipo.ledger log --fast ${{ inputs.force && '--force' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Check the hash chain is intact
         run: python -m ipo.ledger verify
