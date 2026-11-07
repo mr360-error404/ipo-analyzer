@@ -412,7 +412,7 @@ def track(rows, s, chain, board, senttest):
                  else f"Chain broken at entry {bad}: the file was changed by hand.")
     board_html = ""
     if board:
-        board_html = "<table class=\"rows\"><thead><tr><th>Channel or account</th><th>Calls</th><th>Right</th><th>Hit rate</th></tr></thead><tbody>" + "".join(
+        board_html = "<table class=\"rows scorecard\"><thead><tr><th>Channel or account</th><th>Calls</th><th>Right</th><th>Hit rate</th></tr></thead><tbody>" + "".join(
             f'<tr><td>{esc(b["source"])}<span class="sub">{esc(b["platform"])} · {esc(b["ipos"])}</span></td>'
             f'<td data-k="Calls" class="num">{b["calls"]}</td><td data-k="Right" class="num">{b["right"]}</td>'
             f'<td data-k="Hit rate" class="num">{b["accuracy"]:.0f}%</td></tr>' for b in board[:25]) + "</tbody></table>"
@@ -424,7 +424,7 @@ def track(rows, s, chain, board, senttest):
     return f"""<div class="wrap hero">
   <div class="kicker">Track record</div>
   <h1>Calls first, results after.</h1>
-  <p class="lede">A backtest can be tuned until it looks good. A live record can't. Twice a day an automated job saves
+  <p class="lede">A backtest can be tuned until it looks good. A live record can't. Four times a day an automated job attempts to save
   the rating of every IPO that hasn't listed yet. Once it lists, the call is scored here: right or wrong.</p>
 </div>
 <div class="wrap"><div class="stats">{''.join(f'<div class="stat"><div class="v">{v}</div><div class="k">{esc(k)}</div></div>' for v, k in stats)}</div></div>
@@ -447,7 +447,7 @@ def track(rows, s, chain, board, senttest):
 </section>
 <section>
   <h2>Finfluencer scorecard</h2>
-  <p class="note">Stance (apply or avoid) is read automatically and can be wrong. Treat this as an experiment, not a verdict on anyone.</p>
+  <p class="note">Stance (apply or avoid) is read automatically and can be wrong. A few calls cannot establish a channel's accuracy. Treat this as an experiment, not a verdict on anyone.</p>
   {board_html}
 </section></div>"""
 

@@ -1,10 +1,12 @@
-# Logs the prediction for every live IPO twice a day and commits it, so each entry carries
+# Logs the prediction for every live IPO four times a day and commits it, so each entry carries
 # GitHub's own timestamp: public proof it was made before the IPO listed.
 name: Daily prediction log
 
 on:
   schedule:
+    - cron: "30 0 * * *"    # 06:00 IST, early backup in case later runs are delayed
     - cron: "30 2 * * *"    # 08:00 IST, before 09:00 on listing days
+    - cron: "0 3 * * *"     # 08:30 IST, final morning attempt (GitHub may delay it)
     - cron: "30 12 * * *"   # 18:00 IST, after the day's GMP and subscription updates
   workflow_dispatch:        # "Run workflow" button on the Actions tab
     inputs:
@@ -32,9 +34,14 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Run regression checks
+        run: python -m unittest discover -s tests -v
+
       - name: Log predictions for live IPOs
         # --fast skips YouTube transcripts (YouTube usually blocks cloud servers); titles are still read
-        run: python -m ipo.ledger log --fast ${{ inputs.force && '--force' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
+        # Scheduled attempts must not be skipped by the three-hour deduplication window.
+        shell: bash
+        run: python -m ipo.ledger log --fast ${{ (github.event_name == 'schedule' || inputs.force) && '--force' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Check the hash chain is intact
         run: python -m ipo.ledger verify

@@ -137,13 +137,13 @@ def record(res, now=None):
 
 def log_live(progress=print, transcripts=True, force=False):
     """Snapshot every live IPO that hasn't listed yet. Returns how many entries were written."""
-    now = datetime.now(IST)
     last = {}
     for rec in entries():
         last[rec["slug"]] = rec["logged_at"]
     targets = [r for r in pipeline.all_ipos(include_sme=True) if r["status"] in LIVE]
     written = 0
     for i, ipo in enumerate(targets):
+        now = datetime.now(IST)
         day = _day(ipo.get("listing"), now.date())
         if day and not _before_listing(now.isoformat(), day):
             progress(f"skip {ipo['name']}: listing has started")
@@ -157,6 +157,11 @@ def log_live(progress=print, transcripts=True, force=False):
             res = pipeline.analyze(ipo, include_social=True, transcripts=transcripts)
         except Exception as e:
             progress(f"   failed: {type(e).__name__}: {e}")
+            continue
+        # Scraping can cross the cutoff; timestamp the completed analysis, never the run's start.
+        now = datetime.now(IST)
+        if day and not _before_listing(now.isoformat(), day):
+            progress(f"skip {ipo['name']}: analysis finished after the listing cutoff")
             continue
         _append(record(res, now))
         written += 1

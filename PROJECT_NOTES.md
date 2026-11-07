@@ -16,7 +16,7 @@ Python + Streamlit, no database, free to run.
 - **Ledger** (`ipo/ledger.py`, `data/ledger.jsonl`): each entry is SHA-256 chained to the previous one, saved before
   listing, scored after. Also stores news / YouTube / Reddit sentiment at that moment, because sentiment can't be
   backtested honestly.
-- **Daily job** (`.github/workflows/daily-ledger.yml`): runs at 08:00 and 18:00 IST, logs live IPOs, rebuilds
+- **Daily job** (`.github/workflows/daily-ledger.yml`): scheduled at 06:00, 08:00, 08:30 and 18:00 IST, logs live IPOs, rebuilds
   `data/site_snapshot.json`, commits both.
 - **Website** (`greyledger.py`, `web/`): Streamlit renders hand-written HTML/CSS (`web/render.py`,
   `web/analyzer.py`, `web/style.css`). Pages: Today, Analyzer, Track record, Method. Hosted on Streamlit
@@ -76,7 +76,9 @@ Streamlit loads each module once per server start: after changing anything in `i
 ## For the owner: things to keep in mind
 
 **Every day**
-- Nothing to do. The 08:00 and 18:00 IST job logs new IPOs and refreshes the site by itself.
+- Nothing to do. The 06:00, 08:00, 08:30 and 18:00 IST job logs new IPOs and refreshes the site by itself.
+- GitHub schedules can run late or be dropped. The extra morning attempts reduce risk but cannot guarantee a call
+  before 09:00 IST. Scheduled runs bypass the three-hour deduplication window; the listing cutoff still applies.
 - **Do not press "Log predictions now" on your laptop** (Track record tab of `app.py`). GitHub is the one official
   logger; logging from two places would create two clashing copies of the ledger.
 - Before using the local dashboard, bring in the latest ledger: `git pull`.
