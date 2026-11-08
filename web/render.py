@@ -9,11 +9,11 @@ REPO = "https://github.com/mr360-error404/ipo-analyzer"
 LABELS = ["Good", "Moderate", "Risky", "Avoid"]
 PLATFORM = {"youtube": "YouTube", "x": "X", "instagram": "Instagram", "reddit": "Reddit", "news": "News"}
 GROUP_NOTE = {
-    "Good": "Listing score 70 or more. In the 2024–26 backtest, IPOs rated Good listed above their price 97% of the time.",
-    "Moderate": "Listing score 50–69. Mixed signals; in the backtest 81% listed positive, with a much smaller median gain.",
-    "Risky": "Listing score 40–49, or pulled down by a red flag.",
-    "Avoid": "Listing score under 40, or pulled down by red flags. In the backtest, 40% of these listed positive.",
-    "Not enough data": "Too little data yet, usually because the grey market hasn't priced it.",
+    "Good": "Listing score 70 or above. In past tests, 97% of IPOs rated Good listed above their issue price.",
+    "Moderate": "Listing score 50 to 69. Mixed signals. In past tests, 81% listed above issue price, with smaller gains.",
+    "Risky": "Listing score 40 to 49, or lowered by a red flag.",
+    "Avoid": "Listing score below 40, or lowered by red flags. In past tests, only 40% listed above issue price.",
+    "Not enough data": "Not enough data yet, usually because there is no grey market price.",
 }
 
 
@@ -217,17 +217,18 @@ def home(snap, ledger_summary, bt, ledger_n=0):
     s, h = (bt or {}).get("summary", {}), (bt or {}).get("holdout", {})
     good = next((g for g in s.get("listing", {}).get("by_label", []) if g["label"] == "Good"), None)
     stats = [
-        (len(ipos), "live IPOs rated today"),
-        (ledger_summary.get("n", 0), "IPOs on the public record"),
-        (ledger_summary.get("scored", 0), "scored after listing so far"),
-        (f"{good['win']:.0f}%" if good else "—", f"of 'Good' calls listed up in the backtest ({good['n']} IPOs)" if good else "backtest"),
+        (len(ipos), "IPOs rated today"),
+        (ledger_summary.get("n", 0), "IPOs in our saved record"),
+        (ledger_summary.get("scored", 0), "results checked so far"),
+        (f"{good['win']:.0f}%" if good else "—", f"of past 'Good' IPOs listed above issue price ({good['n']} tested)" if good else "past IPOs tested"),
     ]
     out = [f"""<div class="wrap hero">
-  <div class="kicker">Indian IPOs, rated twice</div>
-  <h1>Every IPO call, written down before it lists.</h1>
-  <p class="lede">Greyledger rates each live IPO for listing day and for holding, from the grey market, subscription,
-  financials and what news and YouTube are saying, in English and Hindi. Every call is saved with a timestamp
-  before the IPO lists, then scored in public.</p>
+  <div class="kicker">Indian IPO ratings</div>
+  <h1>We rate IPOs before they list, then show how it turned out.</h1>
+  <p class="lede">Every upcoming Indian IPO gets two ratings: one for the gain on listing day, and one for holding
+  the shares longer. The ratings use the grey market price, how many times the issue is subscribed, the company's
+  financials, and what news and YouTube are saying. Each rating is saved with its date before the IPO lists, so
+  you can check it against the real result.</p>
 </div>
 <div class="wrap"><div class="stats">{''.join(f'<div class="stat"><div class="v">{v}</div><div class="k">{esc(k)}</div></div>' for v, k in stats)}</div></div>"""]
     groups = {}
@@ -262,7 +263,7 @@ def home(snap, ledger_summary, bt, ledger_n=0):
     if not body:
         body.append('<p class="muted">No IPOs are open or about to list right now. Check back soon, or look one up below.</p>')
     out.append(f"""<div class="wrap"><section>
-  <div class="sec-head"><h2>Live IPOs</h2><span class="muted small">Grouped by listing-day rating. The long-term rating is separate and often differs.</span></div>
+  <div class="sec-head"><h2>Live IPOs</h2><span class="muted small">Grouped by listing-day rating. The long-term rating is shown separately and can be different.</span></div>
   {''.join(body)}
 </section></div>""")
     return "".join(out)
@@ -395,9 +396,9 @@ def track(rows, s, chain, board, senttest):
     ok, n, bad = chain
     mark = lambda x: "" if x is None else ('<span class="ok">Yes</span>' if x else '<span class="bad">No</span>')
     fmt = lambda v: "—" if v[0] is None else f"{v[0]:.0f}%"
-    stats = [(s["n"], "IPOs on the record"), (s["scored"], "scored after listing"),
-             (fmt(s["direction"]), f"direction right ({s['direction'][1]} scored)"),
-             (fmt(s["range_hit"]), f"inside the predicted range ({s['range_hit'][1]})")]
+    stats = [(s["n"], "IPOs in our saved record"), (s["scored"], "results checked"),
+             (fmt(s["direction"]), f"called in the right direction ({s['direction'][1]} checked)"),
+             (fmt(s["range_hit"]), f"landed inside our predicted range ({s['range_hit'][1]} checked)")]
     trs = "".join(f"""<tr>
   <td><a class="name" href="?ipo={esc(r['slug'])}" target="_self">{esc(r['name'])}</a>{' <span class="tag">SME</span>' if r.get('sme') else ''}<span class="sub">logged {esc(when(r['logged_at']))}</span></td>
   <td data-k="Lists on">{esc(day(r.get('listing_day')))}</td>
@@ -408,8 +409,8 @@ def track(rows, s, chain, board, senttest):
   <td data-k="In range">{mark(r.get('inside'))}</td>
   <td data-k="Direction">{mark(r.get('direction_ok'))}</td>
 </tr>""" for r in reversed(rows))
-    chain_txt = (f"All {n} entries verified: none edited or removed." if ok
-                 else f"Chain broken at entry {bad}: the file was changed by hand.")
+    chain_txt = (f"All {n} saved calls were checked: none was edited or removed." if ok
+                 else f"The check failed at saved call {bad}: the file was changed by hand.")
     board_html = ""
     if board:
         board_html = "<table class=\"rows scorecard\"><thead><tr><th>Channel or account</th><th>Calls</th><th>Right</th><th>Hit rate</th></tr></thead><tbody>" + "".join(
@@ -417,37 +418,41 @@ def track(rows, s, chain, board, senttest):
             f'<td data-k="Calls" class="num">{b["calls"]}</td><td data-k="Right" class="num">{b["right"]}</td>'
             f'<td data-k="Hit rate" class="num">{b["accuracy"]:.0f}%</td></tr>' for b in board[:25]) + "</tbody></table>"
     else:
-        board_html = '<p class="muted">Fills in as logged IPOs list. Each YouTube channel, X or Instagram account and subreddit that took a side before listing gets scored.</p>'
-    sent = (f'Rank correlation between pre-listing sentiment and what the grey market got wrong: <b>{senttest["rho"]:+.2f}</b> (n = {senttest["n"]}).'
+        board_html = '<p class="muted">This appears once the IPOs in our record have listed.</p>'
+    sent = (f'Link between pre-listing sentiment and how far off the grey market was: <b>{senttest["rho"]:+.2f}</b> across {senttest["n"]} IPOs (0 means no link, +1 means a strong link).'
             if senttest.get("rho") is not None else
-            f'Needs {senttest["min_n"]} listed IPOs with sentiment saved before listing ({senttest["n"]} so far).')
+            f'We need {senttest["min_n"]} listed IPOs with sentiment saved before listing before we can say ({senttest["n"]} so far).')
     return f"""<div class="wrap hero">
   <div class="kicker">Track record</div>
-  <h1>Calls first, results after.</h1>
-  <p class="lede">A backtest can be tuned until it looks good. A live record can't. Four times a day an automated job attempts to save
-  the rating of every IPO that hasn't listed yet. Once it lists, the call is scored here: right or wrong.</p>
+  <h1>Our past calls, and how they turned out.</h1>
+  <p class="lede">Tests on past data can be adjusted until they look good. A live record cannot. Several times a day,
+  an automated job saves our rating for every IPO that has not listed yet. After the IPO lists, we compare the rating
+  with the real result and mark it right or wrong here.</p>
 </div>
 <div class="wrap"><div class="stats">{''.join(f'<div class="stat"><div class="v">{v}</div><div class="k">{esc(k)}</div></div>' for v, k in stats)}</div></div>
 <div class="wrap"><section>
-  <div class="sec-head"><h2>Every call on record</h2><span class="muted small">Only the last call before 09:00 IST on listing day counts.</span></div>
+  <div class="sec-head"><h2>Every call on record</h2><span class="muted small">Only the last rating saved before 09:00 IST on listing day counts.</span></div>
   <table class="rows"><thead><tr><th>IPO</th><th class="l">Lists</th><th class="l">Rating</th><th>Expected</th><th>Chance of gain</th><th>Actual</th><th class="l">In range</th><th class="l">Direction</th></tr></thead><tbody>{trs}</tbody></table>
-  <p class="note" style="margin-top:14px">A short record proves little. Judge it after 20–30 listings.</p>
+  <p class="note" style="margin-top:14px">A few results prove little. Judge this record after 20 to 30 listings.</p>
 </section>
 <section>
-  <h2>Why you can trust the dates</h2>
-  <div class="prose"><p>Each entry stores the SHA-256 hash of the entry before it, so changing or deleting any old
-  prediction breaks every hash after it. The log is committed to GitHub after each run, so GitHub's own timestamps
-  show when each call was made. {chain_txt} {link(REPO + "/blob/main/data/ledger.jsonl", "Read the raw ledger", True)} ·
+  <h2>How we prove the dates are real</h2>
+  <div class="prose"><p>Every saved rating includes a digital fingerprint (a SHA-256 hash) of the rating before it. If
+  anyone edits or deletes an old rating, every fingerprint after it stops matching, and the check fails. After each run
+  the record is also saved to GitHub, which shows when each version was saved. {chain_txt} {link(REPO + "/blob/main/data/ledger.jsonl", "Read the raw ledger", True)} ·
   {link(REPO + "/commits/main/data/ledger.jsonl", "see every commit", True)}.</p></div>
 </section>
 <section>
-  <h2>Does social chatter beat the grey market?</h2>
-  <div class="prose"><p>Sentiment can't be backtested honestly: searching today finds posts written after the listing.
-  So it is saved with every live call instead. {sent}</p></div>
+  <h2>Do news and social posts add anything to the grey market?</h2>
+  <div class="prose"><p>We can't test this fairly on past IPOs, because a search today finds posts written after the
+  listing. So we save the tone of news and posts at the time of each live rating, and test it once enough IPOs have
+  listed. {sent}</p></div>
 </section>
 <section>
   <h2>Finfluencer scorecard</h2>
-  <p class="note">Stance (apply or avoid) is read automatically and can be wrong. A few calls cannot establish a channel's accuracy. Treat this as an experiment, not a verdict on anyone.</p>
+  <p class="note">Each YouTube channel or account that took a side (apply or avoid) before an IPO listed, and whether it
+  was right. The side is read automatically from the title and transcript, so some may be misread. A few calls cannot
+  show how accurate a channel is: treat this as an experiment, not a verdict on anyone.</p>
   {board_html}
 </section></div>"""
 
@@ -521,5 +526,5 @@ def method(bt):
 
 def lookup_intro():
     return """<div class="wrap"><section style="border-bottom:0;padding-bottom:6px">
-  <div class="sec-head"><h2>Look up any IPO</h2><span class="muted small">Runs the full analysis live. Takes up to a minute.</span></div>
+  <div class="sec-head"><h2>Look up any IPO</h2><span class="muted small">Runs a fresh analysis. Takes up to a minute.</span></div>
 </section></div>"""

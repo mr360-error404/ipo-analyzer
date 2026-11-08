@@ -1,6 +1,6 @@
 """Greyledger website.  Run:  streamlit run greyledger.py
 
-Pages come from data/site_snapshot.json (written twice a day by the GitHub job), so they load instantly.
+Pages come from data/site_snapshot.json (written several times a day by the GitHub job), so they load instantly.
 The Analyzer page is the full tool: scan every IPO, analyse any one live, browse the backtest, paste your own
 posts, and (optionally, with your own free key) get an AI summary.
 Routing uses the URL:  ?page=analyzer  ?page=track  ?page=method  ?ipo=<slug>  ?page=analyzer&ipo=<slug>
@@ -160,7 +160,7 @@ def analyzer_page():
 
 def scan_section():
     with st.container(key="ctl"):
-        which = st.radio("Which IPOs", ["Live IPOs (rated twice a day)", "Past IPOs since 2024 (rated from pre-listing data)"],
+        which = st.radio("Which IPOs", ["Live IPOs (updated several times a day)", "Past IPOs since 2024 (rated from pre-listing data)"],
                          horizontal=True, label_visibility="collapsed", key="scan-which")
         horizon_name = st.radio("Rating", ["For listing-day gains", "For long-term holding"], horizontal=True,
                                 label_visibility="collapsed", key="scan-horizon")
