@@ -212,6 +212,18 @@ def page(body, active="", built=None):
 
 # ---------------------------------------------------------------- home
 
+def expected(r):
+    """Expected listing gain, or a plain note when there was no grey market price to estimate from."""
+    mid = r["model"].get("gain_mid")
+    return pct(mid) if mid is not None else '<span class="muted small">no grey market price</span>'
+
+
+def unchecked(r):
+    """Shown in the right/wrong columns when an IPO listed but had no estimate to check."""
+    return ('<span class="muted small">not checked</span>'
+            if r.get("actual") is not None and r["model"].get("gain_mid") is None else "")
+
+
 def record_strip(rows, s):
     """Home-page summary of the live track record: results checked so far, then the next ones due."""
     mark = lambda x: "" if x is None else ('<span class="ok">Right</span>' if x else '<span class="bad">Wrong</span>')
@@ -221,9 +233,9 @@ def record_strip(rows, s):
     trs = "".join(f"""<tr>
   <td><a class="name" href="?ipo={esc(r['slug'])}" target="_self">{esc(r['name'])}</a><span class="sub">listed {esc(day(r.get('listing_day')))}</span></td>
   <td data-k="Our rating" class="l">{rating(r['listing']['label'])}</td>
-  <td data-k="We expected" class="num">{pct(r['model'].get('gain_mid'))}</td>
+  <td data-k="We expected" class="num">{expected(r)}</td>
   <td data-k="It listed at" class="num">{pct(r.get('actual'))}</td>
-  <td data-k="Direction" class="l">{mark(r.get('direction_ok'))}</td>
+  <td data-k="Direction" class="l">{mark(r.get('direction_ok')) or unchecked(r)}</td>
 </tr>""" for r in done[:6])
     table = (f"""<table class="rows"><thead><tr><th>IPO</th><th class="l">Our rating</th><th>We expected</th>
   <th>It listed at</th><th class="l">Direction</th></tr></thead><tbody>{trs}</tbody></table>"""
@@ -431,11 +443,11 @@ def track(rows, s, chain, board, senttest):
   <td><a class="name" href="?ipo={esc(r['slug'])}" target="_self">{esc(r['name'])}</a>{' <span class="tag">SME</span>' if r.get('sme') else ''}<span class="sub">logged {esc(when(r['logged_at']))}</span></td>
   <td data-k="Lists on">{esc(day(r.get('listing_day')))}</td>
   <td data-k="Rating" class="l">{rating(r['listing']['label'])}</td>
-  <td data-k="Expected" class="num">{pct(r['model'].get('gain_mid'))}</td>
+  <td data-k="Expected" class="num">{expected(r)}</td>
   <td data-k="Chance of gain" class="num">{num(None if r['model'].get('p_positive') is None else r['model']['p_positive'] * 100, '{:.0f}%')}</td>
   <td data-k="Actual" class="num">{pct(r.get('actual')) if r.get('actual') is not None else '<span class="muted">waiting</span>'}</td>
-  <td data-k="In range">{mark(r.get('inside'))}</td>
-  <td data-k="Direction">{mark(r.get('direction_ok'))}</td>
+  <td data-k="In range">{mark(r.get('inside')) or unchecked(r)}</td>
+  <td data-k="Direction">{mark(r.get('direction_ok')) or unchecked(r)}</td>
 </tr>""" for r in reversed(rows))
     chain_txt = (f"All {n} saved calls were checked: none was edited or removed." if ok
                  else f"The check failed at saved call {bad}: the file was changed by hand.")
