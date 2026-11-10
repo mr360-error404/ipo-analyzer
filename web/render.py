@@ -178,8 +178,8 @@ def svg_img(w, h, alt, inner):
 def top(active="", built=None):
     """Masthead (with the stylesheet). Each chunk of a page is its own .gl block."""
     nav = "".join(f'<a href="{href}" target="_self" class="{"on" if key == active else ""}">{name}</a>'
-                  for key, href, name in (("home", "?", "Today"), ("analyzer", "?page=analyzer", "Analyzer"),
-                                          ("track", "?page=track", "Track record"), ("method", "?page=method", "Method")))
+                  for key, href, name in (("home", "?", "Today"), ("track", "?page=track", "Track record"),
+                                          ("analyzer", "?page=analyzer", "Analyzer"), ("method", "?page=method", "Method")))
     nav += f'<a href="{REPO}" target="_blank" rel="noopener">Code</a>'
     stamp = f"Updated {when(built)}" if built else ""
     return f"""<style>{FONTS}{CSS}</style>
@@ -212,25 +212,53 @@ def page(body, active="", built=None):
 
 # ---------------------------------------------------------------- home
 
-def home(snap, ledger_summary, bt, ledger_n=0):
+def record_strip(rows, s):
+    """Home-page summary of the live track record: results checked so far, then the next ones due."""
+    mark = lambda x: "" if x is None else ('<span class="ok">Right</span>' if x else '<span class="bad">Wrong</span>')
+    done = [r for r in rows if r.get("actual") is not None]
+    done.sort(key=lambda r: r.get("listing_day") or "", reverse=True)
+    due = sorted((r for r in rows if r.get("actual") is None), key=lambda r: r.get("listing_day") or "9999")
+    trs = "".join(f"""<tr>
+  <td><a class="name" href="?ipo={esc(r['slug'])}" target="_self">{esc(r['name'])}</a><span class="sub">listed {esc(day(r.get('listing_day')))}</span></td>
+  <td data-k="Our rating" class="l">{rating(r['listing']['label'])}</td>
+  <td data-k="We expected" class="num">{pct(r['model'].get('gain_mid'))}</td>
+  <td data-k="It listed at" class="num">{pct(r.get('actual'))}</td>
+  <td data-k="Direction" class="l">{mark(r.get('direction_ok'))}</td>
+</tr>""" for r in done[:6])
+    table = (f"""<table class="rows"><thead><tr><th>IPO</th><th class="l">Our rating</th><th>We expected</th>
+  <th>It listed at</th><th class="l">Direction</th></tr></thead><tbody>{trs}</tbody></table>"""
+             if done else '<p class="muted">No IPO in our record has listed yet. The first results appear here on listing day.</p>')
+    nxt = ", ".join(f'<a href="?ipo={esc(r["slug"])}" target="_self">{esc(r["name"])}</a> ({esc(day(r.get("listing_day")))})'
+                    for r in due[:4])
+    nxt_html = f'<p class="note" style="margin-top:12px">Next to be checked: {nxt}.</p>' if nxt else ""
+    return f"""<div class="wrap"><section>
+  <div class="sec-head"><h2>Results so far</h2><a href="?page=track" target="_self">See the full track record →</a></div>
+  {table}
+  {nxt_html}
+</section></div>"""
+
+
+def home(snap, ledger_summary, bt, ledger_n=0, rows=None):
     ipos = snap.get("ipos", [])
-    s, h = (bt or {}).get("summary", {}), (bt or {}).get("holdout", {})
-    good = next((g for g in s.get("listing", {}).get("by_label", []) if g["label"] == "Good"), None)
+    s = ledger_summary or {}
+    fmt = lambda v: "—" if not v or v[0] is None else f"{v[0]:.0f}%"
+    direction, inside = s.get("direction", (None, 0)), s.get("range_hit", (None, 0))
     stats = [
-        (len(ipos), "IPOs rated today"),
-        (ledger_summary.get("n", 0), "IPOs in our saved record"),
-        (ledger_summary.get("scored", 0), "results checked so far"),
-        (f"{good['win']:.0f}%" if good else "—", f"of past 'Good' IPOs listed above issue price ({good['n']} tested)" if good else "past IPOs tested"),
+        (s.get("scored", 0), f"results checked so far (of {s.get('n', 0)} saved)"),
+        (fmt(direction), f"called in the right direction ({direction[1]} checked)"),
+        (fmt(inside), f"landed inside our predicted range ({inside[1]} checked)"),
+        (len(ipos), "IPOs being rated right now"),
     ]
     out = [f"""<div class="wrap hero">
-  <div class="kicker">Indian IPO ratings</div>
+  <div class="kicker">A public IPO track record</div>
   <h1>We rate IPOs before they list, then show how it turned out.</h1>
-  <p class="lede">Every upcoming Indian IPO gets two ratings: one for the gain on listing day, and one for holding
-  the shares longer. The ratings use the grey market price, how many times the issue is subscribed, the company's
-  financials, and what news and YouTube are saying. Each rating is saved with its date before the IPO lists, so
-  you can check it against the real result.</p>
+  <p class="lede">Anyone can say an IPO looked good after it listed. Greyledger saves its rating, with the date,
+  before the IPO lists, and then publishes the real result next to it, right or wrong. Every upcoming Indian IPO
+  gets a rating for listing day and one for holding longer, based on the grey market price, subscription,
+  financials, and what news and YouTube are saying.</p>
 </div>
-<div class="wrap"><div class="stats">{''.join(f'<div class="stat"><div class="v">{v}</div><div class="k">{esc(k)}</div></div>' for v, k in stats)}</div></div>"""]
+<div class="wrap"><div class="stats">{''.join(f'<div class="stat"><div class="v">{v}</div><div class="k">{esc(k)}</div></div>' for v, k in stats)}</div></div>
+{record_strip(rows or [], s)}"""]
     groups = {}
     for c in ipos:
         groups.setdefault(c["verdict"]["listing"]["label"], []).append(c)

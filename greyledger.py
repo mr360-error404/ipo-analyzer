@@ -312,7 +312,7 @@ elif page == "method":
     st.html(render.page(render.method(bt), "method", built))
 
 else:
-    st.html(render.block(render.top("home", built) + "<main>" + render.home(snap, track["summary"], bt)
+    st.html(render.block(render.top("home", built) + "<main>" + render.home(snap, track["summary"], bt, rows=track["rows"])
                          + render.lookup_intro() + "</main>"))
     with st.container(key="lookup"):
         chosen = ipo_picker("home")
