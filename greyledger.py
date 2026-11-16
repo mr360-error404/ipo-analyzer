@@ -1,6 +1,7 @@
 """Greyledger website.  Run:  streamlit run greyledger.py
 
 Pages come from data/site_snapshot.json (written several times a day by the GitHub job), so they load instantly.
+The snapshot is re-read from GitHub every 10 minutes, so new runs appear without redeploying the app.
 The Analyzer page is the full tool: scan every IPO, analyse any one live, browse the backtest, paste your own
 posts, and (optionally, with your own free key) get an AI summary.
 Routing uses the URL:  ?page=analyzer  ?page=track  ?page=method  ?ipo=<slug>  ?page=analyzer&ipo=<slug>
@@ -59,9 +60,22 @@ def mtime(path):
     return os.path.getmtime(path) if os.path.exists(path) else 0
 
 
-@st.cache_data(show_spinner=False)
+LIVE_SNAPSHOT = "https://raw.githubusercontent.com/mr360-error404/ipo-analyzer/main/data/site_snapshot.json"
+
+
+@st.cache_data(ttl=600, show_spinner=False)
 def load_snapshot(_stamp):
-    return snapshot.load()
+    """Latest snapshot straight from GitHub, so the site shows each run of the logging job without a redeploy.
+    Falls back to the copy deployed with the app if GitHub can't be reached."""
+    try:
+        import requests
+        r = requests.get(LIVE_SNAPSHOT, timeout=10)
+        r.raise_for_status()
+        live = r.json()
+        local = snapshot.load()
+        return live if (live.get("built") or "") >= (local.get("built") or "") else local
+    except Exception:
+        return snapshot.load()
 
 
 @st.cache_data(show_spinner=False)
